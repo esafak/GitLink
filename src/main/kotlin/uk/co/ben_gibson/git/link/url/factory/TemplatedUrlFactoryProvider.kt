@@ -25,12 +25,15 @@ class TemplatedUrlFactoryProvider {
             return customPlatform(platform)
         }
 
-        return TemplatedUrlFactory(PLATFORM_MAP.getValue(platform::class.java))
+        return TemplatedUrlFactory(PLATFORM_MAP.getValue(platform::class.java), platform)
     }
 
     private fun customPlatform(host: Custom): TemplatedUrlFactory {
         val config = service<ApplicationSettings>().customHosts.first { UUID.fromString(it.id).equals(host.id) }
 
-        return TemplatedUrlFactory(UrlTemplates(config.fileAtBranchTemplate, config.fileAtCommitTemplate, config.commitTemplate))
+        return TemplatedUrlFactory(
+            UrlTemplates(config.fileAtBranchTemplate, config.fileAtCommitTemplate, config.commitTemplate),
+            host
+        )
     }
 }

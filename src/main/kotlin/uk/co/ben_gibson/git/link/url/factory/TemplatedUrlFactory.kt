@@ -4,12 +4,14 @@ import uk.co.ben_gibson.git.link.git.Commit
 import uk.co.ben_gibson.git.link.git.File
 import uk.co.ben_gibson.git.link.ui.LineSelection
 import uk.co.ben_gibson.git.link.url.*
+import uk.co.ben_gibson.git.link.platform.Custom
+import uk.co.ben_gibson.git.link.platform.Platform
 import uk.co.ben_gibson.git.link.url.template.UrlTemplates
 import uk.co.ben_gibson.url.URL
 import java.util.regex.Pattern
 import com.google.common.net.UrlEscapers
 
-open class TemplatedUrlFactory(private val templates: UrlTemplates) : UrlFactory {
+open class TemplatedUrlFactory(private val templates: UrlTemplates, private val platform: Platform? = null) : UrlFactory {
     private val escape = UrlEscapers.urlPathSegmentEscaper().asFunction()
 
     private val remotePathPattern = Pattern.compile("\\{remote:url:path:(\\d)}")
@@ -21,7 +23,9 @@ open class TemplatedUrlFactory(private val templates: UrlTemplates) : UrlFactory
             is UrlOptions.UrlOptionsCommit -> processTemplate(options)
         }
 
-        processTemplate = processBaseUrl(processTemplate, baseUrl)
+        val host = if (platform is Custom) platform.domains.firstOrNull()?.toString() else null
+
+        processTemplate = processBaseUrl(processTemplate, baseUrl, host)
         processTemplate = removeUnmatchedSubstitutions(processTemplate)
         processTemplate = processTemplate.replace("(?<!:)/{2,}".toRegex(), "/")
 
@@ -60,10 +64,10 @@ open class TemplatedUrlFactory(private val templates: UrlTemplates) : UrlFactory
         return template
     }
 
-    private fun processBaseUrl(template: String, baseUrl: URL) : String {
+    private fun processBaseUrl(template: String, baseUrl: URL, host: String?) : String {
         var processed = template
             .replace("{remote:url:protocol}", baseUrl.scheme.toString())
-            .replace("{remote:url:host}", baseUrl.host.toString())
+            .replace("{remote:url:host}", host ?: baseUrl.host.toString())
             .replace("{remote:url}", baseUrl.toString())
             .replace("{remote:url:path}", baseUrl.path.toString())
 

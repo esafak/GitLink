@@ -27,7 +27,22 @@ class PlatformRepository {
     fun getById(id: UUID) = load().firstOrNull { it.id == id }
     fun getByDomain(domain: Host): Platform? {
         val platforms = load()
-        return platforms.firstOrNull { it.domains.contains(domain) } ?: platforms.firstOrNull { it.domainPattern?.matcher(domain.toString())?.matches() == true }
+
+        val exactMatch = platforms.firstOrNull { it.domains.contains(domain) }
+
+        if (exactMatch != null && exactMatch !is Custom) {
+            return exactMatch
+        }
+
+        val customPlatform = platforms
+            .filterIsInstance<Custom>()
+            .firstOrNull { it.domains.any { it.toString().startsWith(domain.toString()) } }
+
+        if (customPlatform != null) {
+            return customPlatform
+        }
+
+        return platforms.firstOrNull { it.domainPattern?.matcher(domain.toString())?.matches() == true }
     }
     fun getAll() = load()
 
